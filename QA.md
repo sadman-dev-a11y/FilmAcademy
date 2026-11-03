@@ -35,3 +35,9 @@ Workflow: https://github.com/sadman-dev-a11y/FilmAcademy/actions/runs/4161779842
 Verified public URL: https://sadman-dev-a11y.github.io/FilmAcademy/ . The live homepage, landing → explorer → course → lesson flow and a direct lesson refresh were checked in the browser after publication. The CI suite verifies all declared routes, base paths, browser persistence, controls, keyboard/reduced motion, storyboard round trips and 320px layout against the exact built source.
 
 A separate `Verify published FilmAcademy` workflow executes the same acceptance suite against the real published URL (no local web server). Its artifacts retain desktop/mobile screenshots and the browser report.
+
+## Published-site acceptance result
+
+https://github.com/sadman-dev-a11y/FilmAcademy/actions/runs/41618517430 completed successfully against `https://sadman-dev-a11y.github.io/FilmAcademy/`: **17 passed, 1 intentionally skipped** (desktop instance of the phone-only drawer test). This verifies actual hosted routes, refresh persistence, combined filters, global search, quiz retries, laboratory controls, storyboard import/export and reorder/delete, corrupt backup rejection, reduced motion, keyboard navigation, 320px layouts and no application page errors. The browser report and desktop/mobile screenshots are attached to that run.
+
+Final follow-up documentation changes do not alter application code. No external setup remains required for the static MVP.
