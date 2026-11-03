@@ -2,7 +2,7 @@
 
 Learn the Language of Cinema. An original, browser-local Film and Media Studies educational platform for Sadman Labib Chowdhury.
 
-Deployment target: https://sadman-dev-a11y.github.io/FilmAcademy/ (verification is recorded in QA.md).
+Verified live website: https://sadman-dev-a11y.github.io/FilmAcademy/ (3 November 2026).
 Repository: https://github.com/sadman-dev-a11y/FilmAcademy
 
 ## What works

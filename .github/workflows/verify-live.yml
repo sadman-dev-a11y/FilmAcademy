@@ -1,0 +1,29 @@
+name: Verify published FilmAcademy
+on:
+  workflow_dispatch:
+  push:
+    branches: [CineDesk]
+    paths: [".github/workflows/verify-live.yml"]
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BASE_URL: https://sadman-dev-a11y.github.io/FilmAcademy/
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        if: always()
+        with:
+          name: published-site-browser-evidence
+          path: |
+            qa-screenshots/
+            playwright-report/
