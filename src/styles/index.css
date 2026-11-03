@@ -320,7 +320,7 @@ summary {
 .workspace-main {
   margin-left: var(--sidebar);
   min-width: 0;
-  transition: margin 0.2s;
+  transition: none;
 }
 .topbar {
   height: 78px;

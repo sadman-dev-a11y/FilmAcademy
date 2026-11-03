@@ -87,7 +87,9 @@ test("three laboratory controls change visuals and explanations", async ({
   await page.getByRole("button", { name: "Far side (cross axis)" }).click();
   await expect(page.getByText("Reversed direction")).toBeVisible();
   await page.getByRole("button", { name: "On the axis" }).click();
-  await expect(page.getByText("Neutral view")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Neutral view", exact: true }),
+  ).toBeVisible();
 });
 test("storyboard edit, reorder, delete and JSON round-trip", async ({
   page,
@@ -163,11 +165,17 @@ test("all routes render under repository subpath with no console errors or overf
   ]) {
     await page.goto(`./#${path}`);
     await expect(page.locator("h1,h2").first()).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => ({
+            fits: document.documentElement.scrollWidth <= window.innerWidth,
+            width: window.innerWidth,
+            documentWidth: document.documentElement.scrollWidth,
+          })),
+        { message: `Layout overflow on ${path}` },
+      )
+      .toMatchObject({ fits: true });
   }
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("./");
@@ -227,10 +235,16 @@ test("capture desktop and phone visual evidence", async ({
   ]) {
     await page.goto(`./#${path}`);
     await expect(page.locator("h1,h2").first()).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => ({
+            fits: document.documentElement.scrollWidth <= window.innerWidth,
+            width: window.innerWidth,
+            documentWidth: document.documentElement.scrollWidth,
+          })),
+        { message: `Layout overflow on ${path}` },
+      )
+      .toMatchObject({ fits: true });
   }
 });

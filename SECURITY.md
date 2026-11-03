@@ -7,3 +7,5 @@ Local storage is not an encrypted vault. Do not enter confidential participant i
 The workflow separates read-only build permissions from Pages/OIDC deploy permissions. Pull requests run checks but do not deploy. Review dependency updates and action version changes before merging. For a future backend, require authenticated ownership checks and database row-level authorization; never put a privileged key into Vite source.
 
 Report a suspected code vulnerability privately through the repository owner's GitHub contact options. Avoid posting personal learning data or secrets in public issues.
+
+The development-only minimatch transitive dependency is overridden to the patched 11.x release family for GHSA-g3hv-75wg-m249. Lint, typecheck, tests and production build were rechecked with the override; the subsequent npm audit reported zero vulnerabilities.

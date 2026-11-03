@@ -85,3 +85,11 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [CURRICULUM.md](CURRICULUM.md), [ASSETS.
 1. Consent-based usability sessions with film students, followed by documented accessibility fixes.
 2. More original production exercises and carefully sourced Bangladeshi cinema material.
 3. An optional authenticated storage adapter with row-level authorization and cross-device sync, only after appropriate security tests.
+
+## Interface screenshots
+
+Desktop and phone captures from the automated browser suite:
+
+![Desktop workspace](docs/screenshots/desktop.webp)
+
+![Phone workspace](docs/screenshots/mobile.webp)

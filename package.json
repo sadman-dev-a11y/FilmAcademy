@@ -46,5 +46,8 @@
     "vite": "^8.3.5",
     "vitest": "^5.1.0"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "minimatch": "^11.0.1"
+  }
 }
