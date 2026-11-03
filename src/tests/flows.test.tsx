@@ -1,28 +1,210 @@
-import { render,screen,fireEvent,waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter,Routes,Route } from 'react-router-dom';
-import { describe,it,expect,vi } from 'vitest';
-import { LearningProvider } from '../hooks/useLearning';
-import { Courses,LessonReader,Dashboard,Quiz } from '../features/Learning';
-import { Exposure,Composition,Axis } from '../features/Labs';
-import { Settings } from '../features/Settings';
-import { Studio } from '../features/Studio';
-import { KEY,parseState } from '../lib/store';
-import { courses } from '../data/curriculum';
-function mount(node:React.ReactNode,path='/'){return render(<MemoryRouter initialEntries={[path]}><LearningProvider>{node}</LearningProvider></MemoryRouter>)}
-describe('Learning flows',()=>{
- it('combines course search, category and level filters',async()=>{const user=userEvent.setup();mount(<Courses/>);await user.type(screen.getByLabelText('Search courses'),'sound');await user.selectOptions(screen.getByLabelText('Category'),'Sound & production');expect(screen.getByRole('link',{name:/Listen to the scene/})).toBeInTheDocument();await user.selectOptions(screen.getByLabelText('Level'),'Intermediate');expect(screen.getByText('No courses match these filters.')).toBeInTheDocument()});
- it('completes a lesson, saves a note and bookmark, and updates the dashboard',async()=>{const user=userEvent.setup();mount(<Routes><Route path="/lessons/:slug" element={<LessonReader/>}/><Route path="/my-learning" element={<Dashboard/>}/></Routes>,'/lessons/shot-sizes');await user.click(screen.getByRole('button',{name:'Mark lesson complete'}));await user.type(screen.getByLabelText('Lesson notes'),'Frame with intention');await user.click(screen.getByRole('button',{name:'Bookmark lesson'}));const s=parseState(localStorage.getItem(KEY)!);expect(s.completed).toContain('shot-sizes');expect(s.notes['shot-sizes']).toBe('Frame with intention');expect(s.bookmarks).toContain('shot-sizes')});
- it('restores completion after unmount and remount',async()=>{const first=mount(<Routes><Route path="/lessons/:slug" element={<LessonReader/>}/></Routes>,'/lessons/shot-sizes');fireEvent.click(screen.getByRole('button',{name:'Mark lesson complete'}));first.unmount();mount(<Routes><Route path="/lessons/:slug" element={<LessonReader/>}/></Routes>,'/lessons/shot-sizes');expect(screen.getByRole('button',{name:'Completed · mark incomplete'})).toBeInTheDocument()});
- it('scores a quiz and keeps both retry attempts',async()=>{const user=userEvent.setup();mount(<Routes><Route path="/courses/:slug/quiz" element={<Quiz/>}/></Routes>,'/courses/film-language/quiz');expect(screen.getByRole('button',{name:'Check my answers'})).toBeDisabled();for(const q of courses[0].quiz){const group=screen.getByRole('group',{name:new RegExp(q.prompt.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))});await user.click(group.querySelectorAll('input')[q.correct])}await user.click(screen.getByRole('button',{name:'Check my answers'}));expect(screen.getByText('100% · Well done')).toBeInTheDocument();await user.click(screen.getByRole('button',{name:'Try again'}));for(const group of screen.getAllByRole('group'))await user.click(group.querySelector('input')!);await user.click(screen.getByRole('button',{name:'Check my answers'}));expect(parseState(localStorage.getItem(KEY)!).attempts).toHaveLength(2)});
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { describe, it, expect, vi } from "vitest";
+import { LearningProvider } from "../hooks/useLearning";
+import { Courses, LessonReader, Dashboard, Quiz } from "../features/Learning";
+import { Exposure, Composition, Axis } from "../features/Labs";
+import { Settings } from "../features/Settings";
+import { Studio } from "../features/Studio";
+import { KEY, parseState } from "../lib/store";
+import { courses } from "../data/curriculum";
+function mount(node: React.ReactNode, path = "/") {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <LearningProvider>{node}</LearningProvider>
+    </MemoryRouter>,
+  );
+}
+describe("Learning flows", () => {
+  it("combines course search, category and level filters", async () => {
+    const user = userEvent.setup();
+    mount(<Courses />);
+    await user.type(screen.getByLabelText("Search courses"), "sound");
+    await user.selectOptions(
+      screen.getByLabelText("Category"),
+      "Sound & production",
+    );
+    expect(
+      screen.getByRole("link", { name: /Listen to the scene/ }),
+    ).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Level"), "Intermediate");
+    expect(
+      screen.getByText("No courses match these filters."),
+    ).toBeInTheDocument();
+  });
+  it("completes a lesson, saves a note and bookmark, and updates the dashboard", async () => {
+    const user = userEvent.setup();
+    mount(
+      <Routes>
+        <Route path="/lessons/:slug" element={<LessonReader />} />
+        <Route path="/my-learning" element={<Dashboard />} />
+      </Routes>,
+      "/lessons/shot-sizes",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Mark lesson complete" }),
+    );
+    await user.type(
+      screen.getByLabelText("Lesson notes"),
+      "Frame with intention",
+    );
+    await user.click(screen.getByRole("button", { name: "Bookmark lesson" }));
+    const s = parseState(localStorage.getItem(KEY)!);
+    expect(s.completed).toContain("shot-sizes");
+    expect(s.notes["shot-sizes"]).toBe("Frame with intention");
+    expect(s.bookmarks).toContain("shot-sizes");
+  });
+  it("restores completion after unmount and remount", async () => {
+    const first = mount(
+      <Routes>
+        <Route path="/lessons/:slug" element={<LessonReader />} />
+      </Routes>,
+      "/lessons/shot-sizes",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark lesson complete" }),
+    );
+    first.unmount();
+    mount(
+      <Routes>
+        <Route path="/lessons/:slug" element={<LessonReader />} />
+      </Routes>,
+      "/lessons/shot-sizes",
+    );
+    expect(
+      screen.getByRole("button", { name: "Completed · mark incomplete" }),
+    ).toBeInTheDocument();
+  });
+  it("scores a quiz and keeps both retry attempts", async () => {
+    const user = userEvent.setup();
+    mount(
+      <Routes>
+        <Route path="/courses/:slug/quiz" element={<Quiz />} />
+      </Routes>,
+      "/courses/film-language/quiz",
+    );
+    expect(
+      screen.getByRole("button", { name: "Check my answers" }),
+    ).toBeDisabled();
+    for (const q of courses[0].quiz) {
+      const group = screen.getByRole("group", {
+        name: new RegExp(q.prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      });
+      await user.click(group.querySelectorAll("input")[q.correct]);
+    }
+    await user.click(screen.getByRole("button", { name: "Check my answers" }));
+    expect(screen.getByText("100% · Well done")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    for (const group of screen.getAllByRole("group"))
+      await user.click(group.querySelector("input")!);
+    await user.click(screen.getByRole("button", { name: "Check my answers" }));
+    expect(parseState(localStorage.getItem(KEY)!).attempts).toHaveLength(2);
+  });
 });
-describe('Interactive labs',()=>{
- it('updates exposure visuals and causal explanations',()=>{mount(<Exposure/>);const before=screen.getByRole('img').innerHTML;fireEvent.change(screen.getByLabelText('Aperture'),{target:{value:'1'}});expect(screen.getByText(/A wider aperture admits/)).toBeInTheDocument();fireEvent.change(screen.getByLabelText('ISO'),{target:{value:'3200'}});expect(screen.getByText(/Higher ISO brightens/)).toBeInTheDocument();fireEvent.change(screen.getByLabelText('Shutter speed (seconds)'),{target:{value:'1/25'}});expect(screen.getByRole('img').innerHTML).not.toBe(before);expect(screen.getByText(/Longer shutter time adds/)).toBeInTheDocument()});
- it('changes shot framing, angle and placement',()=>{mount(<Composition/>);fireEvent.change(screen.getByLabelText('Shot size'),{target:{value:'Close'}});fireEvent.change(screen.getByLabelText('Camera angle'),{target:{value:'High'}});fireEvent.change(screen.getByLabelText('Subject placement'),{target:{value:'70'}});expect(screen.getByRole('img')).toHaveAttribute('aria-label',expect.stringContaining('Close framing, high angle, subject at 70'));expect(screen.getByText(/right of center/)).toBeInTheDocument()});
- it('reverses screen direction and demonstrates neutral axis placement',()=>{mount(<Axis/>);fireEvent.click(screen.getByRole('button',{name:'Far side (cross axis)'}));expect(screen.getByText('Reversed direction')).toBeInTheDocument();expect(screen.getByRole('img')).toHaveAttribute('aria-label',expect.stringContaining('far side'));fireEvent.click(screen.getByRole('button',{name:'On the axis'}));expect(screen.getByText('Neutral view')).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Reset camera'}));expect(screen.getByText('Consistent direction')).toBeInTheDocument()});
+describe("Interactive labs", () => {
+  it("updates exposure visuals and causal explanations", () => {
+    mount(<Exposure />);
+    const before = screen.getByRole("img").innerHTML;
+    fireEvent.change(screen.getByLabelText("Aperture"), {
+      target: { value: "1" },
+    });
+    expect(screen.getByText(/A wider aperture admits/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("ISO"), {
+      target: { value: "3200" },
+    });
+    expect(screen.getByText(/Higher ISO brightens/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Shutter speed (seconds)"), {
+      target: { value: "1/25" },
+    });
+    expect(screen.getByRole("img").innerHTML).not.toBe(before);
+    expect(screen.getByText(/Longer shutter time adds/)).toBeInTheDocument();
+  });
+  it("changes shot framing, angle and placement", () => {
+    mount(<Composition />);
+    fireEvent.change(screen.getByLabelText("Shot size"), {
+      target: { value: "Close" },
+    });
+    fireEvent.change(screen.getByLabelText("Camera angle"), {
+      target: { value: "High" },
+    });
+    fireEvent.change(screen.getByLabelText("Subject placement"), {
+      target: { value: "70" },
+    });
+    expect(screen.getByRole("img")).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining("Close framing, high angle, subject at 70"),
+    );
+    expect(screen.getByText(/right of center/)).toBeInTheDocument();
+  });
+  it("reverses screen direction and demonstrates neutral axis placement", () => {
+    mount(<Axis />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Far side (cross axis)" }),
+    );
+    expect(screen.getByText("Reversed direction")).toBeInTheDocument();
+    expect(screen.getByRole("img")).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining("far side"),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "On the axis" }));
+    expect(screen.getByText("Neutral view")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset camera" }));
+    expect(screen.getByText("Consistent direction")).toBeInTheDocument();
+  });
 });
-describe('Local workspace controls',()=>{
- it('creates and edits a board, reorders shots and deletes one',async()=>{vi.spyOn(window,'confirm').mockReturnValue(true);const user=userEvent.setup();mount(<Studio/>);await user.click(screen.getByRole('button',{name:'Load sample board'}));await user.clear(screen.getByLabelText('Storyboard title'));await user.type(screen.getByLabelText('Storyboard title'),'My scene');await user.click(screen.getByRole('button',{name:'Move shot 2 up'}));expect(screen.getAllByLabelText('Shot title')[0]).toHaveValue('The missing key');await user.click(screen.getByRole('button',{name:'Add shot'}));await user.click(screen.getByRole('button',{name:'Delete shot 4'}));expect(parseState(localStorage.getItem(KEY)!).boards[0].shots).toHaveLength(3);expect(parseState(localStorage.getItem(KEY)!).boards[0].title).toBe('My scene');vi.restoreAllMocks()});
- it('changes reduced motion preference and gates reset behind confirmation',async()=>{const user=userEvent.setup();mount(<Settings/>);await user.selectOptions(screen.getByLabelText('Animations'),'reduce');expect(parseState(localStorage.getItem(KEY)!).motion).toBe('reduce');const confirm=vi.spyOn(window,'confirm').mockReturnValue(false);await user.click(screen.getByRole('button',{name:'Reset all learning data'}));expect(parseState(localStorage.getItem(KEY)!).motion).toBe('reduce');confirm.mockReturnValue(true);await user.click(screen.getByRole('button',{name:'Reset all learning data'}));expect(parseState(localStorage.getItem(KEY)!).motion).toBe('system');vi.restoreAllMocks()});
- it('rejects a malformed backup without destroying existing data',async()=>{mount(<Settings/>);fireEvent.change(screen.getByLabelText('Animations'),{target:{value:'reduce'}});const file=new File(['{}'],'bad.json',{type:'application/json'});Object.defineProperty(file,'text',{value:async()=>'{}'});fireEvent.change(screen.getByLabelText('Import learning data file'),{target:{files:[file]}});await waitFor(()=>expect(screen.getByText(/Import rejected/)).toBeInTheDocument());expect(parseState(localStorage.getItem(KEY)!).motion).toBe('reduce')});
+describe("Local workspace controls", () => {
+  it("creates and edits a board, reorders shots and deletes one", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    mount(<Studio />);
+    await user.click(screen.getByRole("button", { name: "Load sample board" }));
+    await user.clear(screen.getByLabelText("Storyboard title"));
+    await user.type(screen.getByLabelText("Storyboard title"), "My scene");
+    await user.click(screen.getByRole("button", { name: "Move shot 2 up" }));
+    expect(screen.getAllByLabelText("Shot title")[0]).toHaveValue(
+      "The missing key",
+    );
+    await user.click(screen.getByRole("button", { name: "Add shot" }));
+    await user.click(screen.getByRole("button", { name: "Delete shot 4" }));
+    expect(parseState(localStorage.getItem(KEY)!).boards[0].shots).toHaveLength(
+      3,
+    );
+    expect(parseState(localStorage.getItem(KEY)!).boards[0].title).toBe(
+      "My scene",
+    );
+    vi.restoreAllMocks();
+  });
+  it("changes reduced motion preference and gates reset behind confirmation", async () => {
+    const user = userEvent.setup();
+    mount(<Settings />);
+    await user.selectOptions(screen.getByLabelText("Animations"), "reduce");
+    expect(parseState(localStorage.getItem(KEY)!).motion).toBe("reduce");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    await user.click(
+      screen.getByRole("button", { name: "Reset all learning data" }),
+    );
+    expect(parseState(localStorage.getItem(KEY)!).motion).toBe("reduce");
+    confirm.mockReturnValue(true);
+    await user.click(
+      screen.getByRole("button", { name: "Reset all learning data" }),
+    );
+    expect(parseState(localStorage.getItem(KEY)!).motion).toBe("system");
+    vi.restoreAllMocks();
+  });
+  it("rejects a malformed backup without destroying existing data", async () => {
+    mount(<Settings />);
+    fireEvent.change(screen.getByLabelText("Animations"), {
+      target: { value: "reduce" },
+    });
+    const file = new File(["{}"], "bad.json", { type: "application/json" });
+    Object.defineProperty(file, "text", { value: async () => "{}" });
+    fireEvent.change(screen.getByLabelText("Import learning data file"), {
+      target: { files: [file] },
+    });
+    await waitFor(() =>
+      expect(screen.getByText(/Import rejected/)).toBeInTheDocument(),
+    );
+    expect(parseState(localStorage.getItem(KEY)!).motion).toBe("reduce");
+  });
 });

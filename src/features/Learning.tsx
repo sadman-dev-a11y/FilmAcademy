@@ -1,20 +1,869 @@
-import { useEffect,useState } from 'react';
-import { Link,useParams,useSearchParams } from 'react-router-dom';
-import { ArrowRight,Check,Bookmark,Clock,ArrowLeft,BookOpen,GraduationCap } from 'lucide-react';
-import { courses,getCourse,getLesson,lessons } from '../data/curriculum';
-import { glossary } from '../data/glossary';
-import type { Question } from '../data/types';
-import { useLearning } from '../hooks/useLearning';
-import { earned,grade,percent } from '../lib/store';
-import { CourseCard,PageHeading,Progress,Empty,Icon } from '../components/UI';
-import { Scene,AxisDiagram,Timeline } from '../components/Visuals';
-export function Courses(){const [params,setParams]=useSearchParams();const query=params.get('q')||'';const category=params.get('category')||'All';const level=params.get('level')||'All';function set(k:string,v:string){const p=new URLSearchParams(params);if(v&&v!=='All')p.set(k,v);else p.delete(k);setParams(p)}const filtered=courses.filter(c=>(category==='All'||category===c.category)&&(level==='All'||level===c.level)&&`${c.title} ${c.summary} ${c.category} ${c.lessons.flatMap(l=>l.terms).join(' ')}`.toLowerCase().includes(query.toLowerCase()));return <><PageHeading eyebrow="THE CURRICULUM" title="Learn the craft. Build your eye." description="Six focused courses. Practical ideas you can use on your next film."/><div className="filter-bar"><label className="field search-field">Search courses<input type="search" placeholder="Try cinematography, sound, editing…" value={query} onChange={e=>set('q',e.target.value)}/></label><label className="field">Category<select value={category} onChange={e=>set('category',e.target.value)}>{['All',...courses.map(c=>c.category)].map(v=><option key={v}>{v}</option>)}</select></label><label className="field">Level<select value={level} onChange={e=>set('level',e.target.value)}>{['All','Beginner','Intermediate'].map(v=><option key={v}>{v}</option>)}</select></label></div><div className="section-heading"><p className="eyebrow">{filtered.length} COURSES FOUND</p><span className="muted">At your pace · no account needed</span></div><div className="course-grid">{filtered.map(c=><CourseCard key={c.id} course={c} index={courses.indexOf(c)}/>)}</div>{!filtered.length&&<Empty title="A different take?"><p>No courses match these filters.</p><button onClick={()=>setParams({})}>Clear filters</button></Empty>}</>}
-export function CourseDetail(){const {slug}=useParams();const course=getCourse(slug||'');const {state}=useLearning();if(!course)return <NotFound/>;const next=course.lessons.find(l=>!state.completed.includes(l.id))||course.lessons[0];return <><Link to="/courses" className="back"><ArrowLeft size={16}/>All courses</Link><div className="course-detail-hero"><div><p className="eyebrow">{course.category} / {course.level}</p><h1>{course.title}</h1><p className="lede">{course.summary}</p><div className="inline-meta"><span><BookOpen size={16}/>{course.lessons.length} lessons</span><span><Clock size={16}/>{course.lessons.reduce((s,l)=>s+l.minutes,0)} min + practice</span></div><Link className="button primary" to={`/lessons/${next.id}`}>{percent(course,state)>0?'Continue learning':'Begin course'}<ArrowRight size={18}/></Link></div><div className="detail-symbol" style={{color:course.color}}><Icon name={course.icon} size={100}/><span>STUDY / 0{courses.indexOf(course)+1}</span></div></div><div className="two-col"><section><h2>Your learning path</h2><div className="lesson-list">{course.lessons.map((l,i)=><Link to={`/lessons/${l.id}`} className="lesson-row" key={l.id}><span className={`lesson-num ${state.completed.includes(l.id)?'done':''}`}>{state.completed.includes(l.id)?<Check size={18}/>:String(i+1).padStart(2,'0')}</span><div><h3>{l.title}</h3><p>{l.minutes} min · lesson + practice</p></div><ArrowRight size={18}/></Link>)}<Link className="lesson-row" to={`/courses/${course.id}/quiz`}><span className="lesson-num"><GraduationCap size={20}/></span><div><h3>Course knowledge check</h3><p>{course.quiz.length} questions · explanations included</p></div><ArrowRight size={18}/></Link></div></section><aside className="panel"><p className="eyebrow">AFTER THIS COURSE</p><h2>You’ll be able to</h2><ul className="outcomes">{course.objectives.map(o=><li key={o}><Check size={17}/>{o}</li>)}</ul><Progress value={percent(course,state)} label="Your lesson progress"/>{course.references.length>0&&<div className="further-reading"><h3>Further reading</h3>{course.references.map(r=><a className="text-link" key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} ↗</a>)}</div>}<p className="caption">Completion record: finish every lesson and score at least 80% on a course quiz. Browser-local, non-accredited learning.</p></aside></div></>}
-function KnowledgeCheck({question}:{question:Question}){const [answer,setAnswer]=useState<number|null>(null);return <fieldset className="knowledge-check"><legend>{question.prompt}</legend><div className="choices">{question.options.map((o,i)=><button key={o} aria-pressed={answer===i} className={answer===i?'selected':''} onClick={()=>setAnswer(i)}>{o}</button>)}</div>{answer!==null&&<p className={answer===question.correct?'feedback good':'feedback'} role="status"><strong>{answer===question.correct?'Correct.':'Try this reasoning.'}</strong> {question.explanation}</p>}</fieldset>}
-export function LessonReader(){const {slug}=useParams();const l=getLesson(slug||'');const {state,update}=useLearning();useEffect(()=>{if(l)update(s=>({...s,recent:[l.id,...s.recent.filter(id=>id!==l.id)].slice(0,20)}))},[l,update]);if(!l)return <NotFound/>;const c=getCourse(l.courseId)!;const index=c.lessons.indexOf(l);const next=c.lessons[index+1];const complete=state.completed.includes(l.id);const bookmarked=state.bookmarks.includes(l.id);return <><Link className="back" to={`/courses/${c.id}`}><ArrowLeft size={16}/>{c.shortTitle}</Link><div className="reader-layout"><article className="lesson-article"><p className="eyebrow">LESSON {index+1} / {c.lessons.length} · {c.level} · {l.minutes} MIN</p><h1>{l.title}</h1><p className="muted">Prerequisite: {index===0?'No prior experience needed.':c.lessons[index-1].title+'.'} Work through the example before marking complete.</p><div className="objectives"><p className="eyebrow">IN THIS LESSON</p><ul>{l.objectives.map(o=><li key={o}>{o}</li>)}</ul></div>{l.sections.map((s,i)=><section key={s.title}><h2>{s.title}</h2><p>{s.text}</p>{i===1&&<figure>{l.diagram==='frame'?<Scene grid/>:l.diagram==='axis'?<AxisDiagram/>:l.diagram==='exposure'?<Scene size="Medium"/>:<Timeline kind={l.diagram}/>}<figcaption>{l.example}</figcaption></figure>}</section>)}<div className="takeaway"><p className="eyebrow">THE TAKEAWAY</p><h3>{l.takeaway}</h3></div><h2>Check your understanding</h2>{l.checks.map(q=><KnowledgeCheck key={q.id} question={q}/>)}<div className="practice"><p className="eyebrow">TAKE IT OFF THE PAGE</p><h2>Your practical task</h2><p>{l.task}</p></div><div className="lesson-actions"><button className={complete?'success':'primary'} onClick={()=>update(s=>({...s,completed:complete?s.completed.filter(id=>id!==l.id):[...s.completed,l.id]}))}><Check size={18}/>{complete?'Completed · mark incomplete':'Mark lesson complete'}</button><Link className="button" to={next?`/lessons/${next.id}`:`/courses/${c.id}/quiz`}>{next?'Next lesson':'Take course quiz'}<ArrowRight size={18}/></Link></div></article><aside className="reader-rail"><div className="panel"><h2>Your workbook</h2><button aria-pressed={bookmarked} onClick={()=>update(s=>({...s,bookmarks:bookmarked?s.bookmarks.filter(id=>id!==l.id):[...s.bookmarks,l.id]}))}><Bookmark size={17}/>{bookmarked?'Bookmarked':'Bookmark lesson'}</button><label className="field">Lesson notes<textarea rows={7} maxLength={10000} placeholder="What will you try on your next shoot?" value={state.notes[l.id]||''} onChange={e=>update(s=>({...s,notes:{...s.notes,[l.id]:e.target.value}}))}/></label><p className="caption">Autosaved on this browser. Export in Settings for a backup.</p></div><div className="panel"><h3>Key terms</h3>{l.terms.map(t=><p key={t}><Link className="text-link" to={`/glossary?q=${encodeURIComponent(t)}`}>{t} ↗</Link></p>)}</div><div className="panel"><h3>Course outline</h3>{c.lessons.map((item,i)=><Link className={`outline-link ${item.id===l.id?'current':''}`} key={item.id} to={`/lessons/${item.id}`}>{i+1}. {item.title}{state.completed.includes(item.id)&&<Check size={15}/>}</Link>)}<Progress value={percent(c,state)} label="Lessons completed"/></div></aside></div></>}
-export function Quiz(){const {slug}=useParams();const c=getCourse(slug||'');const {state,update}=useLearning();const [answers,setAnswers]=useState<number[]>([]);const [submitted,setSubmitted]=useState(false);if(!c)return <NotFound/>;const answered=c.quiz.every((_,i)=>answers[i]!==undefined);const score=grade(c.quiz,answers);return <><Link to={`/courses/${c.id}`} className="back"><ArrowLeft size={16}/>Course outline</Link><PageHeading eyebrow="FORMATIVE ASSESSMENT" title={`${c.shortTitle}: knowledge check`} description="Five questions. Immediate explanations. Retry as often as you need; every attempt remains in your history."/><form className="quiz" onSubmit={e=>{e.preventDefault();if(answered&&!submitted){update(s=>({...s,attempts:[...s.attempts,{courseId:c.id,answers,score,date:new Date().toISOString()}].slice(-1000)}));setSubmitted(true)}}}>{c.quiz.map((q,i)=><fieldset className="panel quiz-question" key={q.id}><legend><span className="eyebrow">QUESTION {i+1}</span>{q.prompt}</legend>{q.options.map((o,j)=><label className={`quiz-option ${submitted&&j===q.correct?'correct':''}`} key={o}><input type="radio" name={q.id} checked={answers[i]===j} disabled={submitted} onChange={()=>setAnswers(a=>{const n=[...a];n[i]=j;return n})}/><span>{o}</span>{submitted&&j===q.correct&&<Check size={18}/>}</label>)}{submitted&&<p className="feedback"><strong>{answers[i]===q.correct?'Correct.':'Review.'}</strong> {q.explanation}</p>}</fieldset>)}{!submitted?<button className="primary" type="submit" disabled={!answered}>Check my answers<ArrowRight size={18}/></button>:<div className="panel result" role="status"><p className="eyebrow">YOUR RESULT</p><h2>{score}% · {score>=80?'Well done':'Keep practicing'}</h2><p>{score>=80?'Quiz threshold met.':'The completion threshold is 80%.'} {earned(c,state)?'You have earned this course’s learning record.':'Complete all lessons and score 80% or more to earn a learning record.'}</p><div className="actions"><button type="button" onClick={()=>{setAnswers([]);setSubmitted(false);window.scrollTo({top:0})}}>Try again</button><Link className="button" to="/achievements">View learning records</Link></div></div>}</form></>}
-export function Dashboard(){const {state,update}=useLearning();const active=courses.filter(c=>c.lessons.some(l=>state.completed.includes(l.id)||state.recent.includes(l.id)));const recent=state.recent.map(getLesson).filter(l=>!!l);return <><PageHeading eyebrow="YOUR LEARNING WORKSPACE" title="One lesson closer." description="Your progress comes from the work you do here, saved on this browser."/><div className="stats-grid">{[[state.completed.length,'Lessons completed'],[state.completed.reduce((n,id)=>n+(getLesson(id)?.minutes||0),0)+' min','Completed lesson estimates'],[courses.filter(c=>earned(c,state)).length,'Courses completed'],[state.attempts.length,'Quiz attempts']].map(([v,l])=><div className="stat panel" key={l}><strong>{v}</strong><span>{l}</span></div>)}</div><section><div className="section-heading"><h2>Continue your learning</h2><Link to="/courses" className="text-link">All courses →</Link></div>{active.length?<div className="course-grid">{active.map(c=><CourseCard key={c.id} course={c} index={courses.indexOf(c)}/>)}</div>:<Empty title="Your first scene starts here"><p>Open a course, work through a lesson and track your progress here.</p><Link className="button primary" to="/courses">Explore courses</Link></Empty>}</section><div className="two-col"><section><h2>Recently viewed</h2>{recent.length?recent.slice(0,5).map(l=><Link className="compact-row" key={l.id} to={`/lessons/${l.id}`}><BookOpen size={18}/>{l.title}<ArrowRight size={16}/></Link>):<p className="muted">Your recently opened lessons will appear here.</p>}<h2>Quiz history</h2>{state.attempts.length?state.attempts.slice(-8).reverse().map((a,i)=><div className="compact-row" key={a.date+i}><span>{getCourse(a.courseId)?.shortTitle}<small>{new Date(a.date).toLocaleDateString()}</small></span><strong>{a.score}%</strong></div>):<p className="muted">Take a course quiz to see results and retries.</p>}</section><section><h2>Bookmarks & notes</h2>{lessons.filter(l=>state.bookmarks.includes(l.id)||state.notes[l.id]).map(l=><div className="panel notebook" key={l.id}><Link to={`/lessons/${l.id}`}><h3>{l.title}</h3></Link>{state.notes[l.id]&&<p>{state.notes[l.id]}</p>}<div className="actions">{state.notes[l.id]&&<button onClick={()=>update(s=>{const notes={...s.notes};delete notes[l.id];return {...s,notes}})}>Delete note</button>}{state.bookmarks.includes(l.id)&&<button onClick={()=>update(s=>({...s,bookmarks:s.bookmarks.filter(id=>id!==l.id)}))}>Remove bookmark</button>}</div></div>)}{!state.bookmarks.length&&!Object.values(state.notes).some(Boolean)&&<p className="muted">Save a lesson or write in its workbook to build your notebook.</p>}</section></div></>}
-export function Glossary(){const [params,setParams]=useSearchParams();const query=params.get('q')||'';const terms=glossary.filter(t=>`${t.term} ${t.definition}`.toLowerCase().includes(query.toLowerCase()));return <><PageHeading eyebrow="THE FILMMAKER’S VOCABULARY" title="Words for what you see." description={`${glossary.length} concise definitions. A companion to your lessons and your next production.`}/><label className="field glossary-search">Search terms and definitions<input type="search" value={query} onChange={e=>setParams(e.target.value?{q:e.target.value}:{})} placeholder="Try aperture, continuity, evidence…"/></label><p className="eyebrow" role="status">{terms.length} TERMS</p><dl className="glossary-grid">{terms.sort((a,b)=>a.term.localeCompare(b.term)).map(t=><div className="panel" key={t.term}><dt>{t.term}</dt><dd>{t.definition}</dd></div>)}</dl>{!terms.length&&<Empty title="No matching term"><p>Try a shorter phrase or search the definition.</p><button onClick={()=>setParams({})}>Clear search</button></Empty>}</>}
-export function Achievements(){const {state}=useLearning();return <><PageHeading eyebrow="EARNED THROUGH PRACTICE" title="Your learning records" description="Finish every lesson and score at least 80% on one course quiz. These are personal, non-accredited completion summaries."/><div className="records">{courses.map(c=><div className={`panel record ${earned(c,state)?'earned':''}`} key={c.id}><GraduationCap size={32}/><p className="eyebrow">{earned(c,state)?'COMPLETION REQUIREMENTS MET':'IN PROGRESS'}</p><h2>{c.title}</h2><Progress value={percent(c,state)} label="Lesson completion"/><p>Best quiz: {Math.max(0,...state.attempts.filter(a=>a.courseId===c.id).map(a=>a.score))}% · required 80%</p>{earned(c,state)?<><p>FilmAcademy learning record — locally recorded completion. Not accredited, institution-approved or independently verified.</p><button onClick={()=>{document.body.dataset.printCourse=c.id;window.print();delete document.body.dataset.printCourse}}>Print learning record</button><div className="print-record" data-course={c.id}><p>FILMACADEMY / LEARNING RECORD</p><h2>{c.title}</h2><p>All {c.lessons.length} lessons completed. Quiz threshold of 80% met.</p><p>Personal browser-local learning summary. No accredited or verified academic credit.</p><p>Generated {new Date().toLocaleDateString()}</p></div></>:<Link className="button" to={`/courses/${c.id}`}>Continue course<ArrowRight size={16}/></Link>}</div>)}</div></>}
-export function Instructor(){return <><PageHeading eyebrow="INSTRUCTOR PREVIEW · READ-ONLY DEMONSTRATION" title="A curriculum you can teach with." description="Learning objectives, practice and feedback mapped together. This preview has no class administration or shared student data."/><div className="notice">Teaching suggestion: ask students to predict a lab result, test one variable, then explain the difference using evidence. Pair the experiment with its lesson and a short practical exercise.</div>{courses.map(c=><section className="panel curriculum-map" key={c.id}><h2>{c.title}</h2><ul>{c.objectives.map(o=><li key={o}>{o}</li>)}</ul>{c.lessons.map(l=><div className="map-row" key={l.id}><Link to={`/lessons/${l.id}`}><h3>{l.title}</h3></Link><ul>{l.objectives.map(o=><li key={o}>{o}</li>)}</ul><p><strong>Practice:</strong> {l.task}</p></div>)}<details><summary>Sample assessment and construction notes</summary><p><strong>{c.quiz[0].prompt}</strong></p><p>Options: {c.quiz[0].options.join(' / ')}</p><p>Correct: {c.quiz[0].options[c.quiz[0].correct]}. {c.quiz[0].explanation}</p><p>Question design: assess one taught distinction, use plausible distractors, and explain the answer so the response supports learning.</p></details></section>)}</>}
-export function NotFound(){return <Empty title="This frame is missing."><p>The page could not be found. Your learning data is still here.</p><Link to="/" className="button primary">Return home</Link></Empty>}
+import { useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import {
+  ArrowRight,
+  Check,
+  Bookmark,
+  Clock,
+  ArrowLeft,
+  BookOpen,
+  GraduationCap,
+} from "lucide-react";
+import { courses, getCourse, getLesson, lessons } from "../data/curriculum";
+import { glossary } from "../data/glossary";
+import type { Question } from "../data/types";
+import { useLearning } from "../hooks/useLearning";
+import { earned, grade, percent } from "../lib/store";
+import {
+  CourseCard,
+  PageHeading,
+  Progress,
+  Empty,
+  Icon,
+} from "../components/UI";
+import { Scene, AxisDiagram, Timeline } from "../components/Visuals";
+export function Courses() {
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") || "";
+  const category = params.get("category") || "All";
+  const level = params.get("level") || "All";
+  function set(k: string, v: string) {
+    const p = new URLSearchParams(params);
+    if (v && v !== "All") p.set(k, v);
+    else p.delete(k);
+    setParams(p);
+  }
+  const filtered = courses.filter(
+    (c) =>
+      (category === "All" || category === c.category) &&
+      (level === "All" || level === c.level) &&
+      `${c.title} ${c.summary} ${c.category} ${c.lessons.flatMap((l) => l.terms).join(" ")}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
+  return (
+    <>
+      <PageHeading
+        eyebrow="THE CURRICULUM"
+        title="Learn the craft. Build your eye."
+        description="Six focused courses. Practical ideas you can use on your next film."
+      />
+      <div className="filter-bar">
+        <label className="field search-field">
+          Search courses
+          <input
+            type="search"
+            placeholder="Try cinematography, sound, editing…"
+            value={query}
+            onChange={(e) => set("q", e.target.value)}
+          />
+        </label>
+        <label className="field">
+          Category
+          <select
+            aria-label="Category"
+            value={category}
+            onChange={(e) => set("category", e.target.value)}
+          >
+            {["All", ...courses.map((c) => c.category)].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          Level
+          <select
+            aria-label="Level"
+            value={level}
+            onChange={(e) => set("level", e.target.value)}
+          >
+            {["All", "Beginner", "Intermediate"].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="section-heading">
+        <p className="eyebrow">{filtered.length} COURSES FOUND</p>
+        <span className="muted">At your pace · no account needed</span>
+      </div>
+      <div className="course-grid">
+        {filtered.map((c) => (
+          <CourseCard key={c.id} course={c} index={courses.indexOf(c)} />
+        ))}
+      </div>
+      {!filtered.length && (
+        <Empty title="A different take?">
+          <p>No courses match these filters.</p>
+          <button onClick={() => setParams({})}>Clear filters</button>
+        </Empty>
+      )}
+    </>
+  );
+}
+export function CourseDetail() {
+  const { slug } = useParams();
+  const course = getCourse(slug || "");
+  const { state } = useLearning();
+  if (!course) return <NotFound />;
+  const next =
+    course.lessons.find((l) => !state.completed.includes(l.id)) ||
+    course.lessons[0];
+  return (
+    <>
+      <Link to="/courses" className="back">
+        <ArrowLeft size={16} />
+        All courses
+      </Link>
+      <div className="course-detail-hero">
+        <div>
+          <p className="eyebrow">
+            {course.category} / {course.level}
+          </p>
+          <h1>{course.title}</h1>
+          <p className="lede">{course.summary}</p>
+          <div className="inline-meta">
+            <span>
+              <BookOpen size={16} />
+              {course.lessons.length} lessons
+            </span>
+            <span>
+              <Clock size={16} />
+              {course.lessons.reduce((s, l) => s + l.minutes, 0)} min + practice
+            </span>
+          </div>
+          <Link className="button primary" to={`/lessons/${next.id}`}>
+            {percent(course, state) > 0 ? "Continue learning" : "Begin course"}
+            <ArrowRight size={18} />
+          </Link>
+        </div>
+        <div className="detail-symbol" style={{ color: course.color }}>
+          <Icon name={course.icon} size={100} />
+          <span>STUDY / 0{courses.indexOf(course) + 1}</span>
+        </div>
+      </div>
+      <div className="two-col">
+        <section>
+          <h2>Your learning path</h2>
+          <div className="lesson-list">
+            {course.lessons.map((l, i) => (
+              <Link to={`/lessons/${l.id}`} className="lesson-row" key={l.id}>
+                <span
+                  className={`lesson-num ${state.completed.includes(l.id) ? "done" : ""}`}
+                >
+                  {state.completed.includes(l.id) ? (
+                    <Check size={18} />
+                  ) : (
+                    String(i + 1).padStart(2, "0")
+                  )}
+                </span>
+                <div>
+                  <h3>{l.title}</h3>
+                  <p>{l.minutes} min · lesson + practice</p>
+                </div>
+                <ArrowRight size={18} />
+              </Link>
+            ))}
+            <Link className="lesson-row" to={`/courses/${course.id}/quiz`}>
+              <span className="lesson-num">
+                <GraduationCap size={20} />
+              </span>
+              <div>
+                <h3>Course knowledge check</h3>
+                <p>{course.quiz.length} questions · explanations included</p>
+              </div>
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </section>
+        <aside className="panel">
+          <p className="eyebrow">AFTER THIS COURSE</p>
+          <h2>You’ll be able to</h2>
+          <ul className="outcomes">
+            {course.objectives.map((o) => (
+              <li key={o}>
+                <Check size={17} />
+                {o}
+              </li>
+            ))}
+          </ul>
+          <Progress
+            value={percent(course, state)}
+            label="Your lesson progress"
+          />
+          {course.references.length > 0 && (
+            <div className="further-reading">
+              <h3>Further reading</h3>
+              {course.references.map((r) => (
+                <a
+                  className="text-link"
+                  key={r.url}
+                  href={r.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {r.title} ↗
+                </a>
+              ))}
+            </div>
+          )}
+          <p className="caption">
+            Completion record: finish every lesson and score at least 80% on a
+            course quiz. Browser-local, non-accredited learning.
+          </p>
+        </aside>
+      </div>
+    </>
+  );
+}
+function KnowledgeCheck({ question }: { question: Question }) {
+  const [answer, setAnswer] = useState<number | null>(null);
+  return (
+    <fieldset className="knowledge-check">
+      <legend>{question.prompt}</legend>
+      <div className="choices">
+        {question.options.map((o, i) => (
+          <button
+            key={o}
+            aria-pressed={answer === i}
+            className={answer === i ? "selected" : ""}
+            onClick={() => setAnswer(i)}
+          >
+            {o}
+          </button>
+        ))}
+      </div>
+      {answer !== null && (
+        <p
+          className={answer === question.correct ? "feedback good" : "feedback"}
+          role="status"
+        >
+          <strong>
+            {answer === question.correct ? "Correct." : "Try this reasoning."}
+          </strong>{" "}
+          {question.explanation}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+export function LessonReader() {
+  const { slug } = useParams();
+  const l = getLesson(slug || "");
+  const { state, update } = useLearning();
+  useEffect(() => {
+    if (l)
+      update((s) => ({
+        ...s,
+        recent: [l.id, ...s.recent.filter((id) => id !== l.id)].slice(0, 20),
+      }));
+  }, [l, update]);
+  if (!l) return <NotFound />;
+  const c = getCourse(l.courseId)!;
+  const index = c.lessons.indexOf(l);
+  const next = c.lessons[index + 1];
+  const complete = state.completed.includes(l.id);
+  const bookmarked = state.bookmarks.includes(l.id);
+  return (
+    <>
+      <Link className="back" to={`/courses/${c.id}`}>
+        <ArrowLeft size={16} />
+        {c.shortTitle}
+      </Link>
+      <div className="reader-layout">
+        <article className="lesson-article">
+          <p className="eyebrow">
+            LESSON {index + 1} / {c.lessons.length} · {c.level} · {l.minutes}{" "}
+            MIN
+          </p>
+          <h1>{l.title}</h1>
+          <p className="muted">
+            Prerequisite:{" "}
+            {index === 0
+              ? "No prior experience needed."
+              : c.lessons[index - 1].title + "."}{" "}
+            Work through the example before marking complete.
+          </p>
+          <div className="objectives">
+            <p className="eyebrow">IN THIS LESSON</p>
+            <ul>
+              {l.objectives.map((o) => (
+                <li key={o}>{o}</li>
+              ))}
+            </ul>
+          </div>
+          {l.sections.map((s, i) => (
+            <section key={s.title}>
+              <h2>{s.title}</h2>
+              <p>{s.text}</p>
+              {i === 1 && (
+                <figure>
+                  {l.diagram === "frame" ? (
+                    <Scene grid />
+                  ) : l.diagram === "axis" ? (
+                    <AxisDiagram />
+                  ) : l.diagram === "exposure" ? (
+                    <Scene size="Medium" />
+                  ) : (
+                    <Timeline kind={l.diagram} />
+                  )}
+                  <figcaption>{l.example}</figcaption>
+                </figure>
+              )}
+            </section>
+          ))}
+          <div className="takeaway">
+            <p className="eyebrow">THE TAKEAWAY</p>
+            <h3>{l.takeaway}</h3>
+          </div>
+          <h2>Check your understanding</h2>
+          {l.checks.map((q) => (
+            <KnowledgeCheck key={q.id} question={q} />
+          ))}
+          <div className="practice">
+            <p className="eyebrow">TAKE IT OFF THE PAGE</p>
+            <h2>Your practical task</h2>
+            <p>{l.task}</p>
+          </div>
+          <div className="lesson-actions">
+            <button
+              className={complete ? "success" : "primary"}
+              onClick={() =>
+                update((s) => ({
+                  ...s,
+                  completed: complete
+                    ? s.completed.filter((id) => id !== l.id)
+                    : [...s.completed, l.id],
+                }))
+              }
+            >
+              <Check size={18} />
+              {complete
+                ? "Completed · mark incomplete"
+                : "Mark lesson complete"}
+            </button>
+            <Link
+              className="button"
+              to={next ? `/lessons/${next.id}` : `/courses/${c.id}/quiz`}
+            >
+              {next ? "Next lesson" : "Take course quiz"}
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </article>
+        <aside className="reader-rail">
+          <div className="panel">
+            <h2>Your workbook</h2>
+            <button
+              aria-pressed={bookmarked}
+              onClick={() =>
+                update((s) => ({
+                  ...s,
+                  bookmarks: bookmarked
+                    ? s.bookmarks.filter((id) => id !== l.id)
+                    : [...s.bookmarks, l.id],
+                }))
+              }
+            >
+              <Bookmark size={17} />
+              {bookmarked ? "Bookmarked" : "Bookmark lesson"}
+            </button>
+            <label className="field">
+              Lesson notes
+              <textarea
+                rows={7}
+                maxLength={10000}
+                placeholder="What will you try on your next shoot?"
+                value={state.notes[l.id] || ""}
+                onChange={(e) =>
+                  update((s) => ({
+                    ...s,
+                    notes: { ...s.notes, [l.id]: e.target.value },
+                  }))
+                }
+              />
+            </label>
+            <p className="caption">
+              Autosaved on this browser. Export in Settings for a backup.
+            </p>
+          </div>
+          <div className="panel">
+            <h3>Key terms</h3>
+            {l.terms.map((t) => (
+              <p key={t}>
+                <Link
+                  className="text-link"
+                  to={`/glossary?q=${encodeURIComponent(t)}`}
+                >
+                  {t} ↗
+                </Link>
+              </p>
+            ))}
+          </div>
+          <div className="panel">
+            <h3>Course outline</h3>
+            {c.lessons.map((item, i) => (
+              <Link
+                className={`outline-link ${item.id === l.id ? "current" : ""}`}
+                key={item.id}
+                to={`/lessons/${item.id}`}
+              >
+                {i + 1}. {item.title}
+                {state.completed.includes(item.id) && <Check size={15} />}
+              </Link>
+            ))}
+            <Progress value={percent(c, state)} label="Lessons completed" />
+          </div>
+        </aside>
+      </div>
+    </>
+  );
+}
+export function Quiz() {
+  const { slug } = useParams();
+  const c = getCourse(slug || "");
+  const { state, update } = useLearning();
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  if (!c) return <NotFound />;
+  const answered = c.quiz.every((_, i) => answers[i] !== undefined);
+  const score = grade(c.quiz, answers);
+  return (
+    <>
+      <Link to={`/courses/${c.id}`} className="back">
+        <ArrowLeft size={16} />
+        Course outline
+      </Link>
+      <PageHeading
+        eyebrow="FORMATIVE ASSESSMENT"
+        title={`${c.shortTitle}: knowledge check`}
+        description="Five questions. Immediate explanations. Retry as often as you need; every attempt remains in your history."
+      />
+      <form
+        className="quiz"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (answered && !submitted) {
+            update((s) => ({
+              ...s,
+              attempts: [
+                ...s.attempts,
+                {
+                  courseId: c.id,
+                  answers,
+                  score,
+                  date: new Date().toISOString(),
+                },
+              ].slice(-1000),
+            }));
+            setSubmitted(true);
+          }
+        }}
+      >
+        {c.quiz.map((q, i) => (
+          <fieldset className="panel quiz-question" key={q.id}>
+            <legend>
+              <span className="eyebrow">QUESTION {i + 1}</span>
+              {q.prompt}
+            </legend>
+            {q.options.map((o, j) => (
+              <label
+                className={`quiz-option ${submitted && j === q.correct ? "correct" : ""}`}
+                key={o}
+              >
+                <input
+                  type="radio"
+                  name={q.id}
+                  checked={answers[i] === j}
+                  disabled={submitted}
+                  onChange={() =>
+                    setAnswers((a) => {
+                      const n = [...a];
+                      n[i] = j;
+                      return n;
+                    })
+                  }
+                />
+                <span>{o}</span>
+                {submitted && j === q.correct && <Check size={18} />}
+              </label>
+            ))}
+            {submitted && (
+              <p className="feedback">
+                <strong>
+                  {answers[i] === q.correct ? "Correct." : "Review."}
+                </strong>{" "}
+                {q.explanation}
+              </p>
+            )}
+          </fieldset>
+        ))}
+        {!submitted ? (
+          <button className="primary" type="submit" disabled={!answered}>
+            Check my answers
+            <ArrowRight size={18} />
+          </button>
+        ) : (
+          <div className="panel result" role="status">
+            <p className="eyebrow">YOUR RESULT</p>
+            <h2>
+              {score}% · {score >= 80 ? "Well done" : "Keep practicing"}
+            </h2>
+            <p>
+              {score >= 80
+                ? "Quiz threshold met."
+                : "The completion threshold is 80%."}{" "}
+              {earned(c, state)
+                ? "You have earned this course’s learning record."
+                : "Complete all lessons and score 80% or more to earn a learning record."}
+            </p>
+            <div className="actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setAnswers([]);
+                  setSubmitted(false);
+                  window.scrollTo({ top: 0 });
+                }}
+              >
+                Try again
+              </button>
+              <Link className="button" to="/achievements">
+                View learning records
+              </Link>
+            </div>
+          </div>
+        )}
+      </form>
+    </>
+  );
+}
+export function Dashboard() {
+  const { state, update } = useLearning();
+  const active = courses.filter((c) =>
+    c.lessons.some(
+      (l) => state.completed.includes(l.id) || state.recent.includes(l.id),
+    ),
+  );
+  const recent = state.recent.map(getLesson).filter((l) => !!l);
+  return (
+    <>
+      <PageHeading
+        eyebrow="YOUR LEARNING WORKSPACE"
+        title="One lesson closer."
+        description="Your progress comes from the work you do here, saved on this browser."
+      />
+      <div className="stats-grid">
+        {[
+          [state.completed.length, "Lessons completed"],
+          [
+            state.completed.reduce(
+              (n, id) => n + (getLesson(id)?.minutes || 0),
+              0,
+            ) + " min",
+            "Completed lesson estimates",
+          ],
+          [courses.filter((c) => earned(c, state)).length, "Courses completed"],
+          [state.attempts.length, "Quiz attempts"],
+        ].map(([v, l]) => (
+          <div className="stat panel" key={l}>
+            <strong>{v}</strong>
+            <span>{l}</span>
+          </div>
+        ))}
+      </div>
+      <section>
+        <div className="section-heading">
+          <h2>Continue your learning</h2>
+          <Link to="/courses" className="text-link">
+            All courses →
+          </Link>
+        </div>
+        {active.length ? (
+          <div className="course-grid">
+            {active.map((c) => (
+              <CourseCard key={c.id} course={c} index={courses.indexOf(c)} />
+            ))}
+          </div>
+        ) : (
+          <Empty title="Your first scene starts here">
+            <p>
+              Open a course, work through a lesson and track your progress here.
+            </p>
+            <Link className="button primary" to="/courses">
+              Explore courses
+            </Link>
+          </Empty>
+        )}
+      </section>
+      <div className="two-col">
+        <section>
+          <h2>Recently viewed</h2>
+          {recent.length ? (
+            recent.slice(0, 5).map((l) => (
+              <Link className="compact-row" key={l.id} to={`/lessons/${l.id}`}>
+                <BookOpen size={18} />
+                {l.title}
+                <ArrowRight size={16} />
+              </Link>
+            ))
+          ) : (
+            <p className="muted">
+              Your recently opened lessons will appear here.
+            </p>
+          )}
+          <h2>Quiz history</h2>
+          {state.attempts.length ? (
+            state.attempts
+              .slice(-8)
+              .reverse()
+              .map((a, i) => (
+                <div className="compact-row" key={a.date + i}>
+                  <span>
+                    {getCourse(a.courseId)?.shortTitle}
+                    <small>{new Date(a.date).toLocaleDateString()}</small>
+                  </span>
+                  <strong>{a.score}%</strong>
+                </div>
+              ))
+          ) : (
+            <p className="muted">
+              Take a course quiz to see results and retries.
+            </p>
+          )}
+        </section>
+        <section>
+          <h2>Bookmarks & notes</h2>
+          {lessons
+            .filter((l) => state.bookmarks.includes(l.id) || state.notes[l.id])
+            .map((l) => (
+              <div className="panel notebook" key={l.id}>
+                <Link to={`/lessons/${l.id}`}>
+                  <h3>{l.title}</h3>
+                </Link>
+                {state.notes[l.id] && <p>{state.notes[l.id]}</p>}
+                <div className="actions">
+                  {state.notes[l.id] && (
+                    <button
+                      onClick={() =>
+                        update((s) => {
+                          const notes = { ...s.notes };
+                          delete notes[l.id];
+                          return { ...s, notes };
+                        })
+                      }
+                    >
+                      Delete note
+                    </button>
+                  )}
+                  {state.bookmarks.includes(l.id) && (
+                    <button
+                      onClick={() =>
+                        update((s) => ({
+                          ...s,
+                          bookmarks: s.bookmarks.filter((id) => id !== l.id),
+                        }))
+                      }
+                    >
+                      Remove bookmark
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          {!state.bookmarks.length &&
+            !Object.values(state.notes).some(Boolean) && (
+              <p className="muted">
+                Save a lesson or write in its workbook to build your notebook.
+              </p>
+            )}
+        </section>
+      </div>
+    </>
+  );
+}
+export function Glossary() {
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") || "";
+  const terms = glossary.filter((t) =>
+    `${t.term} ${t.definition}`.toLowerCase().includes(query.toLowerCase()),
+  );
+  return (
+    <>
+      <PageHeading
+        eyebrow="THE FILMMAKER’S VOCABULARY"
+        title="Words for what you see."
+        description={`${glossary.length} concise definitions. A companion to your lessons and your next production.`}
+      />
+      <label className="field glossary-search">
+        Search terms and definitions
+        <input
+          type="search"
+          value={query}
+          onChange={(e) =>
+            setParams(e.target.value ? { q: e.target.value } : {})
+          }
+          placeholder="Try aperture, continuity, evidence…"
+        />
+      </label>
+      <p className="eyebrow" role="status">
+        {terms.length} TERMS
+      </p>
+      <dl className="glossary-grid">
+        {terms
+          .sort((a, b) => a.term.localeCompare(b.term))
+          .map((t) => (
+            <div className="panel" key={t.term}>
+              <dt>{t.term}</dt>
+              <dd>{t.definition}</dd>
+            </div>
+          ))}
+      </dl>
+      {!terms.length && (
+        <Empty title="No matching term">
+          <p>Try a shorter phrase or search the definition.</p>
+          <button onClick={() => setParams({})}>Clear search</button>
+        </Empty>
+      )}
+    </>
+  );
+}
+export function Achievements() {
+  const { state } = useLearning();
+  return (
+    <>
+      <PageHeading
+        eyebrow="EARNED THROUGH PRACTICE"
+        title="Your learning records"
+        description="Finish every lesson and score at least 80% on one course quiz. These are personal, non-accredited completion summaries."
+      />
+      <div className="records">
+        {courses.map((c) => (
+          <div
+            className={`panel record ${earned(c, state) ? "earned" : ""}`}
+            key={c.id}
+          >
+            <GraduationCap size={32} />
+            <p className="eyebrow">
+              {earned(c, state) ? "COMPLETION REQUIREMENTS MET" : "IN PROGRESS"}
+            </p>
+            <h2>{c.title}</h2>
+            <Progress value={percent(c, state)} label="Lesson completion" />
+            <p>
+              Best quiz:{" "}
+              {Math.max(
+                0,
+                ...state.attempts
+                  .filter((a) => a.courseId === c.id)
+                  .map((a) => a.score),
+              )}
+              % · required 80%
+            </p>
+            {earned(c, state) ? (
+              <>
+                <p>
+                  FilmAcademy learning record — locally recorded completion. Not
+                  accredited, institution-approved or independently verified.
+                </p>
+                <button
+                  onClick={() => {
+                    document.body.dataset.printCourse = c.id;
+                    window.print();
+                    delete document.body.dataset.printCourse;
+                  }}
+                >
+                  Print learning record
+                </button>
+                <div className="print-record" data-course={c.id}>
+                  <p>FILMACADEMY / LEARNING RECORD</p>
+                  <h2>{c.title}</h2>
+                  <p>
+                    All {c.lessons.length} lessons completed. Quiz threshold of
+                    80% met.
+                  </p>
+                  <p>
+                    Personal browser-local learning summary. No accredited or
+                    verified academic credit.
+                  </p>
+                  <p>Generated {new Date().toLocaleDateString()}</p>
+                </div>
+              </>
+            ) : (
+              <Link className="button" to={`/courses/${c.id}`}>
+                Continue course
+                <ArrowRight size={16} />
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+export function Instructor() {
+  return (
+    <>
+      <PageHeading
+        eyebrow="INSTRUCTOR PREVIEW · READ-ONLY DEMONSTRATION"
+        title="A curriculum you can teach with."
+        description="Learning objectives, practice and feedback mapped together. This preview has no class administration or shared student data."
+      />
+      <div className="notice">
+        Teaching suggestion: ask students to predict a lab result, test one
+        variable, then explain the difference using evidence. Pair the
+        experiment with its lesson and a short practical exercise.
+      </div>
+      {courses.map((c) => (
+        <section className="panel curriculum-map" key={c.id}>
+          <h2>{c.title}</h2>
+          <ul>
+            {c.objectives.map((o) => (
+              <li key={o}>{o}</li>
+            ))}
+          </ul>
+          {c.lessons.map((l) => (
+            <div className="map-row" key={l.id}>
+              <Link to={`/lessons/${l.id}`}>
+                <h3>{l.title}</h3>
+              </Link>
+              <ul>
+                {l.objectives.map((o) => (
+                  <li key={o}>{o}</li>
+                ))}
+              </ul>
+              <p>
+                <strong>Practice:</strong> {l.task}
+              </p>
+            </div>
+          ))}
+          <details>
+            <summary>Sample assessment and construction notes</summary>
+            <p>
+              <strong>{c.quiz[0].prompt}</strong>
+            </p>
+            <p>Options: {c.quiz[0].options.join(" / ")}</p>
+            <p>
+              Correct: {c.quiz[0].options[c.quiz[0].correct]}.{" "}
+              {c.quiz[0].explanation}
+            </p>
+            <p>
+              Question design: assess one taught distinction, use plausible
+              distractors, and explain the answer so the response supports
+              learning.
+            </p>
+          </details>
+        </section>
+      ))}
+    </>
+  );
+}
+export function NotFound() {
+  return (
+    <Empty title="This frame is missing.">
+      <p>The page could not be found. Your learning data is still here.</p>
+      <Link to="/" className="button primary">
+        Return home
+      </Link>
+    </Empty>
+  );
+}

@@ -37,25 +37,25 @@ Open the Vite URL under `/FilmAcademy/`. The managed development environment use
 
 ## Routes
 
-| Route | Experience |
-| --- | --- |
-| `/` | Landing and discovery |
-| `/courses` | Searchable, filterable courses |
-| `/courses/:slug` | Outline, outcomes and progress |
-| `/lessons/:slug` | Article/workbook, checks and notes |
-| `/courses/:slug/quiz` | Scored course assessment and retry |
-| `/labs` | Lab gallery |
-| `/labs/exposure` | Exposure experiment |
-| `/labs/composition` | Framing and camera-angle experiment |
-| `/labs/axis` | Screen-direction experiment |
-| `/studio/storyboards` | Local multi-board editor |
-| `/my-learning` | Real local activity dashboard |
-| `/glossary` | Searchable definitions |
-| `/achievements` | Earned and in-progress learning records |
-| `/instructor-preview` | Read-only curriculum mapping |
-| `/settings` | Motion, backups, reset and privacy |
-| `/about`, `/help` | Project details and orientation |
-| Any unknown path | Friendly recovery route |
+| Route                 | Experience                              |
+| --------------------- | --------------------------------------- |
+| `/`                   | Landing and discovery                   |
+| `/courses`            | Searchable, filterable courses          |
+| `/courses/:slug`      | Outline, outcomes and progress          |
+| `/lessons/:slug`      | Article/workbook, checks and notes      |
+| `/courses/:slug/quiz` | Scored course assessment and retry      |
+| `/labs`               | Lab gallery                             |
+| `/labs/exposure`      | Exposure experiment                     |
+| `/labs/composition`   | Framing and camera-angle experiment     |
+| `/labs/axis`          | Screen-direction experiment             |
+| `/studio/storyboards` | Local multi-board editor                |
+| `/my-learning`        | Real local activity dashboard           |
+| `/glossary`           | Searchable definitions                  |
+| `/achievements`       | Earned and in-progress learning records |
+| `/instructor-preview` | Read-only curriculum mapping            |
+| `/settings`           | Motion, backups, reset and privacy      |
+| `/about`, `/help`     | Project details and orientation         |
+| Any unknown path      | Friendly recovery route                 |
 
 URLs use `/#/…` with HashRouter. Repository subpath refreshes remain valid on static hosting.
 
@@ -70,6 +70,7 @@ URLs use `/#/…` with HashRouter. Repository subpath refreshes remain valid on 
 The account's actual default branch at creation was `CineDesk`. The Pages workflow targets that branch, runs lint/typecheck/unit tests/build and desktop/mobile Playwright, uploads `dist`, then deploys through the `github-pages` environment. Vite base is `/FilmAcademy/`. Pages Source is configured as **GitHub Actions**. No secrets or paid services are required.
 
 Workflow references checked 3 November 2026:
+
 - https://vite.dev/guide/static-deploy
 - https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
 

@@ -1,23 +1,236 @@
-import { test,expect } from '@playwright/test';
-import { courses } from '../src/data/curriculum';
-test('learning path, note, bookmark and refresh persistence',async({page})=>{
- await page.goto('./');await page.getByRole('link',{name:'Find your first course'}).click();await page.getByRole('link',{name:/The language of cinema/}).click();await page.getByRole('link',{name:'Begin course'}).click();await page.getByRole('button',{name:'Mark lesson complete'}).click();await page.getByLabel('Lesson notes').fill('Try wide then close.');await page.getByRole('button',{name:'Bookmark lesson'}).click();await page.reload();await expect(page.getByRole('button',{name:'Completed · mark incomplete'})).toBeVisible();await expect(page.getByLabel('Lesson notes')).toHaveValue('Try wide then close.');await page.goto('./#/my-learning');await expect(page.getByText('1',{exact:true})).toBeVisible();await expect(page.getByText('Try wide then close.')).toBeVisible();
+import { test, expect } from "@playwright/test";
+import { courses } from "../src/data/curriculum";
+test("learning path, note, bookmark and refresh persistence", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByRole("link", { name: "Find your first course" }).click();
+  await page.getByRole("link", { name: /The language of cinema/ }).click();
+  await page.getByRole("link", { name: "Begin course" }).click();
+  await page.getByRole("button", { name: "Mark lesson complete" }).click();
+  await page.getByLabel("Lesson notes").fill("Try wide then close.");
+  await page.getByRole("button", { name: "Bookmark lesson" }).click();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Completed · mark incomplete" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Lesson notes")).toHaveValue(
+    "Try wide then close.",
+  );
+  await page.goto("./#/my-learning");
+  await expect(page.getByText("1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Try wide then close.")).toBeVisible();
 });
-test('combined search filters and global glossary results',async({page})=>{
- await page.goto('./#/courses');await page.getByLabel('Search courses').fill('sound');await page.getByLabel('Category',{exact:true}).selectOption('Sound & production');await expect(page.locator('.course-card')).toHaveCount(1);await page.getByLabel('Level',{exact:true}).selectOption('Intermediate');await expect(page.getByText('No courses match these filters.')).toBeVisible();await page.getByLabel('Search courses, lessons and glossary').fill('clipping');await expect(page.locator('.search-results').getByRole('link',{name:'Clipping Glossary'})).toBeVisible();
+test("combined search filters and global glossary results", async ({
+  page,
+}) => {
+  await page.goto("./#/courses");
+  await page.getByLabel("Search courses").fill("sound");
+  await page
+    .getByLabel("Category", { exact: true })
+    .selectOption("Sound & production");
+  await expect(page.locator(".course-card")).toHaveCount(1);
+  await page.getByLabel("Level", { exact: true }).selectOption("Intermediate");
+  await expect(page.getByText("No courses match these filters.")).toBeVisible();
+  await page
+    .getByLabel("Search courses, lessons and glossary")
+    .fill("clipping");
+  await expect(
+    page
+      .locator(".search-results")
+      .getByRole("link", { name: "Clipping Glossary" }),
+  ).toBeVisible();
 });
-test('quiz computes scores and keeps retries',async({page})=>{
- await page.goto('./#/courses/film-language/quiz');await expect(page.getByRole('button',{name:'Check my answers'})).toBeDisabled();for(const [i,q] of courses[0].quiz.entries())await page.locator('.quiz-question').nth(i).getByRole('radio').nth(q.correct).check();await page.getByRole('button',{name:'Check my answers'}).click();await expect(page.getByText('100% · Well done')).toBeVisible();await page.getByRole('button',{name:'Try again'}).click();for(const group of await page.locator('.quiz-question').all())await group.getByRole('radio').first().check();await page.getByRole('button',{name:'Check my answers'}).click();await page.goto('./#/my-learning');await expect(page.getByText('Quiz attempts',{exact:true})).toBeVisible();await expect(page.locator('.stat').filter({hasText:'Quiz attempts'})).toContainText('2');
+test("quiz computes scores and keeps retries", async ({ page }) => {
+  await page.goto("./#/courses/film-language/quiz");
+  await expect(
+    page.getByRole("button", { name: "Check my answers" }),
+  ).toBeDisabled();
+  for (const [i, q] of courses[0].quiz.entries())
+    await page
+      .locator(".quiz-question")
+      .nth(i)
+      .getByRole("radio")
+      .nth(q.correct)
+      .check();
+  await page.getByRole("button", { name: "Check my answers" }).click();
+  await expect(page.getByText("100% · Well done")).toBeVisible();
+  await page.getByRole("button", { name: "Try again" }).click();
+  for (const group of await page.locator(".quiz-question").all())
+    await group.getByRole("radio").first().check();
+  await page.getByRole("button", { name: "Check my answers" }).click();
+  await page.goto("./#/my-learning");
+  await expect(page.getByText("Quiz attempts", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".stat").filter({ hasText: "Quiz attempts" }),
+  ).toContainText("2");
 });
-test('three laboratory controls change visuals and explanations',async({page})=>{
- await page.goto('./#/labs/exposure');await page.getByLabel('ISO',{exact:true}).selectOption('3200');await expect(page.getByText(/Higher ISO brightens/)).toBeVisible();await page.getByRole('button',{name:'Action',exact:true}).click();await expect(page.getByText(/Shorter shutter time reduces/)).toBeVisible();await page.getByRole('button',{name:'Reset controls'}).click();await expect(page.getByText(/ISO 400 is our signal reference/)).toBeVisible();await page.goto('./#/labs/composition');await page.getByLabel('Shot size').selectOption('Close');await page.getByLabel('Camera angle').selectOption('High');await page.getByLabel('Rule-of-thirds grid').uncheck();await expect(page.getByRole('img')).toHaveAttribute('aria-label',/Close framing, high angle/);await page.goto('./#/labs/axis');await page.getByRole('button',{name:'Far side (cross axis)'}).click();await expect(page.getByText('Reversed direction')).toBeVisible();await page.getByRole('button',{name:'On the axis'}).click();await expect(page.getByText('Neutral view')).toBeVisible();
+test("three laboratory controls change visuals and explanations", async ({
+  page,
+}) => {
+  await page.goto("./#/labs/exposure");
+  await page.getByLabel("ISO", { exact: true }).selectOption("3200");
+  await expect(page.getByText(/Higher ISO brightens/)).toBeVisible();
+  await page.getByRole("button", { name: "Action", exact: true }).click();
+  await expect(page.getByText(/Shorter shutter time reduces/)).toBeVisible();
+  await page.getByRole("button", { name: "Reset controls" }).click();
+  await expect(page.getByText(/ISO 400 is our signal reference/)).toBeVisible();
+  await page.goto("./#/labs/composition");
+  await page.getByLabel("Shot size").selectOption("Close");
+  await page.getByLabel("Camera angle").selectOption("High");
+  await page.getByLabel("Rule-of-thirds grid").uncheck();
+  await expect(page.getByRole("img")).toHaveAttribute(
+    "aria-label",
+    /Close framing, high angle/,
+  );
+  await page.goto("./#/labs/axis");
+  await page.getByRole("button", { name: "Far side (cross axis)" }).click();
+  await expect(page.getByText("Reversed direction")).toBeVisible();
+  await page.getByRole("button", { name: "On the axis" }).click();
+  await expect(page.getByText("Neutral view")).toBeVisible();
 });
-test('storyboard edit, reorder, delete and JSON round-trip',async({page})=>{
- await page.goto('./#/studio/storyboards');await page.getByRole('button',{name:'Load sample board'}).click();await page.getByLabel('Storyboard title').fill('Test scene');await page.getByRole('button',{name:'Move shot 2 up'}).click();await expect(page.getByLabel('Shot title').first()).toHaveValue('The missing key');await page.getByRole('button',{name:'Add shot',exact:true}).click();page.on('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Delete shot 4'}).click();const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Export JSON',exact:true}).click();const downloaded=await downloadPromise;const path=await downloaded.path();expect(path).toBeTruthy();await page.getByLabel('Import storyboard file').setInputFiles(path!);await expect(page.getByText('Storyboard imported as a new board.')).toBeVisible();await page.reload();await expect(page.getByLabel('Project',{exact:true}).getByRole('option')).toHaveCount(3);
+test("storyboard edit, reorder, delete and JSON round-trip", async ({
+  page,
+}) => {
+  await page.goto("./#/studio/storyboards");
+  await page.getByRole("button", { name: "Load sample board" }).click();
+  await page.getByLabel("Storyboard title").fill("Test scene");
+  await page.getByRole("button", { name: "Move shot 2 up" }).click();
+  await expect(page.getByLabel("Shot title").first()).toHaveValue(
+    "The missing key",
+  );
+  await page.getByRole("button", { name: "Add shot", exact: true }).click();
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Delete shot 4" }).click();
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export JSON", exact: true }).click();
+  const downloaded = await downloadPromise;
+  const path = await downloaded.path();
+  expect(path).toBeTruthy();
+  await page.getByLabel("Import storyboard file").setInputFiles(path!);
+  await expect(
+    page.getByText("Storyboard imported as a new board."),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByLabel("Project", { exact: true }).getByRole("option"),
+  ).toHaveCount(3);
 });
-test('backup import validation, reduced motion and keyboard access',async({page})=>{
- await page.goto('./#/settings');await page.getByLabel('Animations').selectOption('reduce');await expect(page.locator('html')).toHaveAttribute('data-motion','reduce');await page.getByLabel('Import learning data file').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{}')});await expect(page.getByText(/Import rejected/)).toBeVisible();await expect(page.getByLabel('Animations')).toHaveValue('reduce');await page.reload();await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Skip to content'})).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('main')).toBeFocused();
+test("backup import validation, reduced motion and keyboard access", async ({
+  page,
+}) => {
+  await page.goto("./#/settings");
+  await page.getByLabel("Animations").selectOption("reduce");
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
+  await page.getByLabel("Import learning data file").setInputFiles({
+    name: "bad.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{}"),
+  });
+  await expect(page.getByText(/Import rejected/)).toBeVisible();
+  await expect(page.getByLabel("Animations")).toHaveValue("reduce");
+  await page.reload();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("link", { name: "Skip to content" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("main")).toBeFocused();
 });
-test('all routes render under repository subpath with no console errors or overflow',async({page})=>{
- const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));for(const path of ['/','/courses','/courses/cinematography','/lessons/exposure-triangle','/labs','/labs/exposure','/labs/composition','/labs/axis','/studio/storyboards','/my-learning','/glossary','/achievements','/instructor-preview','/settings','/about','/help','/missing']){await page.goto(`./#${path}`);await expect(page.locator('h1,h2').first()).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true)}await page.setViewportSize({width:320,height:720});await page.goto('./');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);expect(errors).toEqual([]);
+test("all routes render under repository subpath with no console errors or overflow", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  for (const path of [
+    "/",
+    "/courses",
+    "/courses/cinematography",
+    "/lessons/exposure-triangle",
+    "/labs",
+    "/labs/exposure",
+    "/labs/composition",
+    "/labs/axis",
+    "/studio/storyboards",
+    "/my-learning",
+    "/glossary",
+    "/achievements",
+    "/instructor-preview",
+    "/settings",
+    "/about",
+    "/help",
+    "/missing",
+  ]) {
+    await page.goto(`./#${path}`);
+    await expect(page.locator("h1,h2").first()).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto("./");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("mobile navigation opens, traps focus and closes with Escape", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "Phone drawer only");
+  await page.goto("./");
+  await page
+    .getByRole("button", { name: "Open navigation", exact: true })
+    .click();
+  const drawer = page.getByRole("dialog", { name: "Main navigation" });
+  await expect(drawer).toBeVisible();
+  await expect(
+    drawer.getByRole("button", { name: "Close navigation", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    drawer.getByRole("link", { name: "Help & orientation" }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Open navigation", exact: true }),
+  ).toBeFocused();
+  await expect(drawer).toHaveCount(0);
+});
+test("capture desktop and phone visual evidence", async ({
+  page,
+}, testInfo) => {
+  await page.goto("./");
+  await page
+    .getByRole("heading", { name: "Learn the language of cinema." })
+    .waitFor();
+  await page.screenshot({
+    path: `qa-screenshots/${testInfo.project.name}.png`,
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 320, height: 720 });
+  for (const path of [
+    "/",
+    "/courses",
+    "/labs/exposure",
+    "/labs/composition",
+    "/labs/axis",
+    "/studio/storyboards",
+    "/settings",
+    "/lessons/shot-sizes",
+  ]) {
+    await page.goto(`./#${path}`);
+    await expect(page.locator("h1,h2").first()).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
 });

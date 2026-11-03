@@ -2,14 +2,14 @@
 
 Six courses, 18 substantive original lessons. Each lesson has prerequisites, estimated time, measurable objectives, four teaching sections, a diagram/worked example, three key terms, two explained knowledge checks, a practical task and a takeaway. The lesson reader offers course next steps and a local workbook. Each course ends in five original formative MCQs.
 
-| Course | Lessons |
-| --- | --- |
-| Film Language & Visual Storytelling | Thinking in shot sizes; Camera angles and point of view; Composition and mise-en-scène |
-| Fundamentals of Cinematography | Exposure: three connected decisions; Lenses, perspective and depth; Lighting a motivated scene |
-| Film Editing & Continuity | Continuity and the 180-degree axis; Cuts and transitions with a purpose; Pacing, rhythm and screen time |
-| Film Direction & Storyboarding | A director’s vision begins with action; Blocking actors and the camera; Storyboards and practical shot lists |
-| Sound & Film Production | Diegetic sound and the listening world; Recording intelligible dialogue; A small production that stays organized |
-| Film Studies & Research Methods | Close reading a moving image; From a topic to a research question; Evidence, citations and media literacy |
+| Course                              | Lessons                                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Film Language & Visual Storytelling | Thinking in shot sizes; Camera angles and point of view; Composition and mise-en-scène                           |
+| Fundamentals of Cinematography      | Exposure: three connected decisions; Lenses, perspective and depth; Lighting a motivated scene                   |
+| Film Editing & Continuity           | Continuity and the 180-degree axis; Cuts and transitions with a purpose; Pacing, rhythm and screen time          |
+| Film Direction & Storyboarding      | A director’s vision begins with action; Blocking actors and the camera; Storyboards and practical shot lists     |
+| Sound & Film Production             | Diegetic sound and the listening world; Recording intelligible dialogue; A small production that stays organized |
+| Film Studies & Research Methods     | Close reading a moving image; From a topic to a research question; Evidence, citations and media literacy        |
 
 The instructor preview maps every objective to a lesson and practical task and reveals one sample question per course with construction notes. The glossary contains 56 concise terms. Labs use original illustrations, with prose explanations of their limits. Formal interpretations are contextual, not universal mappings of angle to emotion.
 
