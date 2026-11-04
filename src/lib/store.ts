@@ -171,6 +171,25 @@ export function parseBoard(raw: string): Board {
     throw new Error("Duplicate shot identifiers.");
   return { ...parsed.board, id: createId() };
 }
+/** Create a filesystem-friendly filename without discarding non-Latin scripts. */
+export function storyboardFilename(title: string) {
+  const slug = Array.from(
+    title
+      .normalize("NFC")
+      .trim()
+      .replace(/[^\p{L}\p{M}\p{N}]+/gu, "-")
+      .replace(/^-+|-+$/g, ""),
+  )
+    .slice(0, 60)
+    .join("")
+    .replace(/-+$/g, "");
+  const safe = slug || "storyboard";
+  const base = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(safe)
+    ? `storyboard-${safe}`
+    : safe;
+  return `${base}.json`;
+}
+
 export function download(name: string, value: unknown) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
