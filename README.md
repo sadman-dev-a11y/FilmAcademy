@@ -93,3 +93,7 @@ Desktop and phone captures from the automated browser suite:
 ![Desktop workspace](docs/screenshots/desktop.webp)
 
 ![Phone workspace](docs/screenshots/mobile.webp)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, validation, accessibility checks, and how to propose a focused change.
