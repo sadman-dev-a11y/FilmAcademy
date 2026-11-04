@@ -16,6 +16,7 @@ import {
   newBoard,
   newShot,
   parseBoard,
+  storyboardFilename,
   type Board,
   type Shot,
 } from "../lib/store";
@@ -182,7 +183,7 @@ export function Studio() {
               <button
                 onClick={() =>
                   download(
-                    `${board.title.replace(/[^a-z0-9]/gi, "-") || "storyboard"}.json`,
+                    storyboardFilename(board.title),
                     { schemaVersion: 1, board },
                   )
                 }

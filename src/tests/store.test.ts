@@ -11,6 +11,7 @@ import {
   newShot,
   newBoard,
   parseBoard,
+  storyboardFilename,
   KEY,
   readState,
   createId,
@@ -178,6 +179,18 @@ describe("Storyboard operations", () => {
     const imported = parseBoard(JSON.stringify({ schemaVersion: 1, board: b }));
     expect(imported.id).not.toBe(b.id);
     expect(imported.shots).toEqual(b.shots);
+  });
+  it("exports readable Unicode storyboard filenames", () => {
+    expect(storyboardFilename("বাংলা ছবি")).toBe("বাংলা-ছবি.json");
+    expect(storyboardFilename("A film: take #1")).toBe("A-film-take-1.json");
+    expect(storyboardFilename("Café")).toBe("Café.json");
+    expect(storyboardFilename("🎬 ✨")).toBe("storyboard.json");
+  });
+  it("keeps filenames bounded and safe across platforms", () => {
+    expect(storyboardFilename("CON")).toBe("storyboard-CON.json");
+    expect(storyboardFilename("x".repeat(200))).toBe(
+      "x".repeat(60) + ".json",
+    );
   });
   it("rejects invalid duration and duplicate identifiers", () => {
     const shot = newShot();
